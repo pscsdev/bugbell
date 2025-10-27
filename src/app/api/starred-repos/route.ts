@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           id: repo.id,
           name: repo.name,
           language: repo.language,
+          issues: issues,
         };
       })
     );
