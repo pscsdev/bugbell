@@ -2,9 +2,20 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { signIn, useSession } from "@/lib/auth-client";
+import { DropdownMenuPortal } from "@/components/ui/dropdown-menu";
+import { signIn, signOut, useSession } from "@/lib/auth-client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   const { data: session } = useSession();
   console.log(session);
 
@@ -15,15 +26,61 @@ export default function Home() {
           <h1 className="font-bold md:text-2xl text-xl">BugBell</h1>
           <div className="flex space-x-4">
             {session ? (
-              <Avatar>
-                <AvatarImage
-                  src="https://github.com/shadcn.png"
-                  alt="@shadcn"
-                />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="inline-flex rounded-full focus:outline-none focus:ring-0">
+                    <Avatar className="cursor-pointer inline-flex">
+                      <AvatarImage
+                        src={
+                          session.user.image || "https://github.com/shadcn.png"
+                        }
+                        alt={session.user.name}
+                      />
+                      <AvatarFallback>CN</AvatarFallback>
+                    </Avatar>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuContent
+                    side="bottom"
+                    align="end"
+                    sideOffset={8}
+                    className="w-56 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100 shadow-lg"
+                  >
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none">
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none">
+                        My account
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                      <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none" onClick={() => signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            router.push("/");
+                          }
+                        }
+                      })}>
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+
+                  </DropdownMenuContent>
+                </DropdownMenuPortal>
+              </DropdownMenu>
             ) : (
-              <Button onClick={() => signIn.social({ provider: "github" })}>
+              <Button
+                onClick={() =>
+                  signIn.social({
+                    provider: "github",
+                    callbackURL: "/dashboard",
+                    errorCallbackURL: "/",
+                  })
+                }
+              >
                 Sign in with github
               </Button>
             )}
