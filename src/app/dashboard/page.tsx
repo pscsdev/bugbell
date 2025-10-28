@@ -49,7 +49,7 @@ export default function Dashboard() {
         setError(null)
         const response = await fetch("/api/starred-repos");
         const data = await response.json();
-        console.log(data)
+        console.log(data) 
         setRepos(data.repos);
       } catch (error) {
         console.error("Error:", error);
