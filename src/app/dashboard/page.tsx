@@ -49,6 +49,13 @@ export default function Dashboard() {
         setError(null)
         const response = await fetch("/api/starred-repos");
         const data = await response.json();
+        const saveDetails = await fetch("api/auth/save-user")
+        const j = await saveDetails.json()
+        if (j?.ok) {
+          console.log("successful")
+        } else {
+          console.error("save-user failed", j);
+        }
         console.log(data) 
         setRepos(data.repos);
       } catch (error) {

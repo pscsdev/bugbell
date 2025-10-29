@@ -1,4 +1,4 @@
-import { Client, Databases, ID } from 'node-appwrite'
+import { Client, Databases, ID, Query } from 'node-appwrite'
 
 const client = new Client()
     .setEndpoint(process.env.APPWRITE_ENDPOINT!)
@@ -8,3 +8,4 @@ const client = new Client()
 export const databases =  new Databases(client)
 export const appwriteClient = client
 export { ID }
+export { Query }
