@@ -1,12 +1,11 @@
 "use client";
 
 import Forbidden from "@/components/forbidden";
-import { useSession } from "@/lib/auth-client";
+import { signOut, useSession } from "@/lib/auth-client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { IconFolderCode } from "@tabler/icons-react";
-import { ArrowUpRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -18,12 +17,23 @@ import {
 } from "@/components/ui/empty";
 
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Loading from "@/components/loading";
@@ -31,37 +41,44 @@ import { useEffect, useState } from "react";
 import { Item, ItemContent, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
 import DashboardTable from "./dashboard-table";
+import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  const result = useSession();
-  const session = result?.data ?? result;
-  const isLoading = result?.isPending ?? session == undefined;
-  const { data: currentSession } = useSession();
+  // single useSession call
+  const { data: currentSession, isPending: sessionPending } = useSession();
+  const sessionLoading = sessionPending || currentSession == undefined;
+
+  const router = useRouter();
 
   const [repos, setRepos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // repos fetch
+  const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchRepos() {
       try {
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
+
         const response = await fetch("/api/starred-repos");
         const data = await response.json();
-        const saveDetails = await fetch("api/auth/save-user")
-        const j = await saveDetails.json()
+
+        // fix: leading slash for save-user
+        const saveDetails = await fetch("/api/auth/save-user");
+        const j = await saveDetails.json();
         if (j?.ok) {
-          console.log("successful")
+          console.log("successful save-user");
         } else {
           console.error("save-user failed", j);
         }
-        console.log(data) 
-        setRepos(data.repos);
-      } catch (error) {
-        console.error("Error:", error);
-        setError(error instanceof Error ? error.message : "Failed to fetch repos");
-        setRepos([]); // Ensure repos stays as empty array on error
+
+        // guard in case API returns array or { repos: [...] }
+        setRepos(data?.repos ?? data ?? []);
+      } catch (err) {
+        console.error("Error:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch repos");
+        setRepos([]);
       } finally {
         setLoading(false);
       }
@@ -70,7 +87,7 @@ export default function Dashboard() {
     fetchRepos();
   }, []);
 
-  if (isLoading) {
+  if (sessionLoading) {
     return <Loading />;
   }
 
@@ -82,6 +99,7 @@ export default function Dashboard() {
             <h1 className="md:text-3xl text-2xl font-bold">
               Yo, {currentSession.user.name}!
             </h1>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="inline-flex rounded-full focus:outline-none focus:ring-0">
@@ -97,6 +115,7 @@ export default function Dashboard() {
                   </Avatar>
                 </div>
               </DropdownMenuTrigger>
+
               <DropdownMenuPortal>
                 <DropdownMenuContent
                   side="bottom"
@@ -105,20 +124,30 @@ export default function Dashboard() {
                   className="w-56 rounded-md border border-neutral-800 bg-neutral-900 text-neutral-100 shadow-lg"
                 >
                   <DropdownMenuGroup>
-                    <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-900 focus:bg-neutral-900 focus:outline-none">
-                      Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-900 focus:bg-neutral-900 focus:outline-none">
-                      My account
+                    <DropdownMenuItem
+                      className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-900 focus:bg-neutral-900 focus:outline-none text-red-500"
+                      onClick={() =>
+                        signOut({
+                          fetchOptions: {
+                            onSuccess: () => {
+                              router.push("/");
+                            },
+                          },
+                        })
+                      }
+                    >
+                      Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenuPortal>
             </DropdownMenu>
           </div>
+
           <div className="py-2">
             <p>Let’s go bug hunting 🚀</p>
           </div>
+
           {error ? (
             <div className="py-12">
               <Empty className="py-8">
@@ -128,7 +157,8 @@ export default function Dashboard() {
                   </EmptyMedia>
                   <EmptyTitle>Error Loading Repos</EmptyTitle>
                   <EmptyDescription>
-                    {error}. Please try refreshing the page or check your GitHub connection.
+                    {error}. Please try refreshing the page or check your GitHub
+                    connection.
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

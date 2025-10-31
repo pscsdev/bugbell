@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 
+
 export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -48,11 +49,8 @@ export default function Home() {
                     className="w-56 rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100 shadow-lg"
                   >
                     <DropdownMenuGroup>
-                      <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none">
+                      <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none" onClick={() => router.push("/dashboard")}>
                         Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-neutral-800 focus:bg-neutral-800 focus:outline-none">
-                        My account
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />

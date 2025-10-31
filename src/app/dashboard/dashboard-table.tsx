@@ -28,6 +28,7 @@ import {
 import { ArrowUpDown, ChevronDown, GitBranch, MoreHorizontal } from "lucide-react";
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 type IssueRow = {
   number: number;
@@ -162,6 +163,11 @@ export default function DashboardTable({ repos = [] }: { repos?: any[] }) {
       columnVisibility,
       rowSelection,
     },
+    initialState: {
+      pagination: {
+        pageSize:10,
+      }
+    }
   });
   
   const [titleFilterInput, setTitleFilterInput] = React.useState<string>(() => {
@@ -170,24 +176,85 @@ export default function DashboardTable({ repos = [] }: { repos?: any[] }) {
     return (typeof v === "string" && v) || "";
   });
 
-   React.useEffect(() => {
-    const handler = setTimeout(() => {
-      const col = table.getColumn("title");
-      if (col && typeof col.setFilterValue === "function") {
-        col.setFilterValue(titleFilterInput || undefined);
-      }
-    }, 200);
+  //  React.useEffect(() => {
+  //   const handler = setTimeout(() => {
+  //     const col = table.getColumn("title");
+  //     if (col && typeof col.setFilterValue === "function") {
+  //       col.setFilterValue(titleFilterInput || undefined);
+  //     }
+  //   }, 200);
 
-    return () => clearTimeout(handler);
-  }, [titleFilterInput, table]);
+  //   return () => clearTimeout(handler);
+  // }, [titleFilterInput, table]);
+
+  const pageCount = table.getPageCount();
+  const currentPage = table.getState().pagination.pageIndex;
+  
+   const paginationItems = React.useMemo(() => {
+    const items = [];
+
+    items.push(
+      <PaginationItem key={0}>
+        <PaginationLink
+          onClick={() => table.setPageIndex(0)}
+          isActive={currentPage === 0}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+    
+    if (currentPage > 2) {
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+    }
+
+    for (let i = Math.max(1, currentPage - 1); i <= Math.min(pageCount - 2, currentPage + 1); i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink
+            onClick={() => table.setPageIndex(i)}
+            isActive={currentPage === i}
+          >
+            {i + 1}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    if (currentPage < pageCount - 3) {
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+    }
+
+    if (pageCount > 1) {
+      items.push(
+        <PaginationItem key={pageCount - 1}>
+          <PaginationLink 
+            onClick={() => table.setPageIndex(pageCount - 1)}
+            isActive={currentPage === pageCount - 1}
+          >
+            {pageCount}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  }, [currentPage, pageCount, table]);
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4 justify-between">
-        <Input placeholder="Filter Issues..." className="md:max-w-sm mr-4" value={titleFilterInput} onChange={(event) => setTitleFilterInput(event.target.value)}/>
+      {/* <div className="flex justify-end">
         <IconReload />
-      </div>
-      <div>
+      </div> */}
+      <div className="pt-10">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -237,6 +304,33 @@ export default function DashboardTable({ repos = [] }: { repos?: any[] }) {
           </TableBody>
         </Table>
       </div>
+
+      {/* {pageCount > 1 && (
+        <div className="flex items-center justify-between py-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {currentPage * 10 + 1} to {Math.min((currentPage + 1) * 10, data.length)} of {data.length} results
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => table.previousPage()}
+                  className={!table.getCanPreviousPage() ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              
+              {paginationItems}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => table.nextPage()}
+                  className={!table.getCanNextPage() ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )} */}
     </div>
   );
 }
